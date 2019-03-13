@@ -12,42 +12,43 @@ directory = "C:\\MWS Images"
 os.chdir(directory)
 con_suffix = ''
 
+pathN = os.path.join(directory, "ENG.zip")
+ENG_archive = zipfile.ZipFile(pathN, 'w')
+for fileName in os.listdir(directory):
+    mo = cardPattern.search(fileName)
+
+    if mo == None:
+        continue
+
+    oldCardName = mo.group(1)
+    full = mo.group(2)
+    extension = mo.group(3)
+
+    cardName = oldCardName
     
-    for fileName in os.listdir(directory):
-        mo = cardPattern.search(fileName)
+    i = 0
+    while i < len(cardName):
+        if cardName[i] == 'Â»' or cardName[i] == '╗':
+            cardName = cardName[:i] + '_' + cardName[i+1:]
+        i += 1
 
-        if mo == None:
-            continue
+    if cardName[-1].isdigit():
+        cardName = cardName[:-1] + " [" + cardName[-1] + "]"
 
-        oldCardName = mo.group(1)
-        full = mo.group(2)
-        extension = mo.group(3)
+    if len(suffix) > 1:
+        newFileName = cardName + con_suffix + extension
+    else:
+        newFileName = cardName + extension
+    absWorkingDir = os.path.abspath(directory)
 
-        cardName = oldCardName
-    
-        i = 0
-        while i < len(cardName):
-            if cardName[i] == 'Â»' or cardName[i] == '╗':
-                cardName = cardName[:i] + '_' + cardName[i+1:]
-            i += 1
+    pathName = os.path.join(absWorkingDir, fileName)
+    newPathName = os.path.join(absWorkingDir, newFileName)
 
-        if cardName[-1].isdigit():
-            cardName = cardName[:-1] + " [" + cardName[-1] + "]"
-
-        if len(suffix) > 1:
-            newFileName = cardName + con_suffix + extension
-        else:
-            newFileName = cardName + extension
-        absWorkingDir = os.path.abspath(directory)
-
-        pathName = os.path.join(absWorkingDir, fileName)
-        newPathName = os.path.join(absWorkingDir, newFileName)
-
-        shutil.move(pathName, newPathName)
-        ENG_archive.write(fileName)
-        os.remove(fileName)
+    shutil.move(pathName, newPathName)
+    ENG_archive.write(fileName)
+    os.remove(fileName)
         
-        print("Processed " + cardName + "...")
+    print("Processed " + cardName + "...")
 
-    ENG_archive.close()    
-    print('Work complete.')
+ENG_archive.close()    
+print('Work complete.')
