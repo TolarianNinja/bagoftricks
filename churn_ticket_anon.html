@@ -1,0 +1,863 @@
+<!--
+	@author:	Alex Hartshorn
+	@editor:	Notepad++
+	@purpose: 	Generate ticket and email information for cancellations on
+				Company churn form.  All information is anonymized to allow posting on GitHub.
+	@changelog:	Can now select what kind of plan they were on / going to 
+				(instead of just volume based custom plans).
+	@editing:	Use Ctrl+F to find
+				Sales Agents: 	Add/remove option to id "agents" (line 105)
+								Add/remove email to switch function setSalesEmail (line 820)
+				Signature:		Edit name in var supportRep (line 443)
+								Edit text in function signature (line 471)
+-->
+<html>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<head>
+<title>Churn Form Ticket Generator v2</title>
+<style>
+html, body {
+	padding: 0px;
+	spacing: 0px;
+	margin: 0px 0px 0px 0px;
+	background-color: darkgray;
+	font-family: Verdana;
+	text-align: center;
+	height: 100%;
+}
+a {
+	text-decoration: none;
+	color: blue;
+}
+a:hover {
+	text-decoration: underline;
+}
+.main_table {
+	margin-left: auto;
+	margin-right: auto;
+	width: 600px;
+	max-width: 600px;
+	max-height: 100%;
+	text-align: center;
+	background-color: teal;
+	font-size: 13px;
+	vertical-align: top;
+}
+.main_td {
+	vertical-align: top;
+}
+/*  Churn that occurs on the weekend is handled on the Friday before.  weekend_days is
+ *	irrelevant if the cancellation is for M-F, thus hidden unless Weekend Churn is
+ *	checked.
+ */
+#weekend_days {
+	display: none;
+}
+
+/*	Downgrade Options is the class for the entire downgrade section, then each
+ *  option id is for each individual account type.  Downgrade Options includes the
+ *	account type selections section, and will display any time downgrade is selected.
+ */
+.downgrade_options {
+	display: none;
+}
+#volume_old {
+	display: none;
+}
+#contacts_old {
+	display: none;
+}
+#standard_old {
+	display: none;
+}
+#volume_new {
+	display: none;
+}
+#contacts_new {
+	display: none;
+}
+#standard_new {
+	display: none;
+}
+
+.all_ticket_info {
+	display: none;
+}
+#mrr {
+	display: none;
+}
+
+</style>
+</head>
+
+<body>
+
+<table class="main_table" cellpadding="0" cellspacing="0">
+	<tr>
+		<td id="base_info">
+			<table align="center">
+				<tr id="sales_name_space">
+					<td width="200px">Sales Agent:</td>
+					<td width="200px">
+						<select name="agents" id="agents">
+							<option value="Default">select rep</option>
+							<option value="Agent01">Agent 01</option>
+							<option value="Agent02">Agent 02</option>
+							<option value="Agent03">Agent 03</option>
+							<option value="Agent04">Agent 04</option>
+							<option value="Agent05">Agent 05</option>
+							<option value="Agent06">Agent 06</option>
+							<option value="Agent07">Agent 07</option>
+							<option value="Agent08">Agent 08</option>
+							<option value="Agent09">Agent 09</option>
+							<option value="Agent10">Agent 10</option>
+						</select>
+					</td>
+				</tr>
+				<tr id="company_name_space">
+					<td width="200px">Account Name:</td>
+					<td width="200px">
+						<input type="text" name="companyname" id="companyname">
+					</td>
+				</tr>
+				<tr id="company_p2k_space">
+					<td width="200px">Account P2K:</td>
+					<td width="200px">
+						<input type="text" name="companyp2k" id="companyp2k">
+					</td>
+				</tr>
+				<tr>
+					<td width="200px">
+						<input type="checkbox" id="postdate" name="postdate" onclick="weekend_churn()">Weekend Churn
+					</td>
+					<td>
+						<select name="weekend_days" id="weekend_days">
+							<option value="Default">select day</option>
+							<option value="Saturday">Saturday</option>
+							<option value="Sunday">Sunday</option>
+						</select>
+					</td>
+				</tr>
+				<tr id="ticket_type_select">
+					<td width="200px">
+						<input type="radio" name="tickettype" value="Cancel" id="typecancel" onclick="hide_downgrade()" checked>Cancellation
+					</td>
+					<td width="200px">
+						<input type="radio" name="tickettype" value="Downgrade" id="typedowngrade" onclick="show_downgrade()">Downgrade
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr class="downgrade_options" id="downgrade_options">
+		<td valign="top">
+			<table align="center" cellpadding="0" cellspacing="0">
+				<tr>
+					<td id="select_downgrade_types">
+						<table align="center">
+							<tr id="select_downgrade_old">
+								<td width="200px" valign="top">Old Plan:</td>
+								<td width="200px" valign="top">
+									<input type="radio" name="old_plan_type" value="Volume" id="old_type_volume" onclick="show_old_volume()">Volume</br>
+									<input type="radio" name="old_plan_type" value="Contact" id="old_type_contact" onclick="show_old_contact()">Contact</br>
+									<input type="radio" name="old_plan_type" value="Standard" id="old_type_standard" onclick="show_old_standard()">Standard</br>
+								</td>
+							</tr>
+							<tr id="select_downgrade_new">
+								<td width="200px" valign="top">New Plan:</td>
+								<td width="200px" valign="top">
+									<input type="radio" name="new_plan_type" value="Volume" id="new_type_volume" onclick="show_new_volume()">Volume</br>
+									<input type="radio" name="new_plan_type" value="Contact" id="new_type_contact" onclick="show_new_contact()">Contact</br>
+									<input type="radio" name="new_plan_type" value="Standard" id="new_type_standard" onclick="show_new_standard()">Standard</br>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td id="volume_old">
+						<table align="center">
+							<tr>
+								<td width="200px">Base Monthly Fee Old:</td>
+								<td width="200px">
+									<input type="text" name="old_vol_base" id="old_vol_base" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">Email Usage Fee Old:</td>
+								<td width="200px">
+									<input type="text" name="old_vol_fee" id="old_vol_fee" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">Email Usage Old:</td>
+								<td width="200px">
+									<input type="text" name="old_vol_usage" id="old_vol_usage" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">CPM Old:</td>
+								<td width="200px">
+									<input type="text" name="old_vol_cpm" id="old_vol_cpm" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">Prepaid Old:</td>
+								<td width="200px">
+									<input type="text" name="old_vol_pool" id="old_vol_pool" value="N/A">
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td id="contacts_old">
+						<table align="center">
+							<tr>
+								<td width="200px">Base Monthly Fee Old:</td>
+								<td width="200px">
+									<input type="text" name="old_con_base" id="old_con_base" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">Contact Usage Fee Old:</td>
+								<td width="200px">
+									<input type="text" name="old_con_fee" id="old_con_fee" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">Contact Usage Old:</td>
+								<td width="200px">
+									<input type="text" name="old_con_usage" id="old_con_usage" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">Contact Overage Old:</td>
+								<td width="200px">
+									<input type="text" name="old_con_ovg" id="old_con_ovg" value="0">
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td id="standard_old">
+						<table align="center">
+							<tr>
+								<td width="200px">Plan Code Old:</td>
+								<td width="200px">
+									<select name="old_standard_plan" id="old_standard_plan">
+										<option value="No old plan selected!">select plan</option>
+										<option value="Plan 1 - 19.95">Plan 1 - $19.95</option>
+										<option value="Plan 2 - 29.95">Plan 2 - $29.95</option>
+										<option value="Plan 3 - 49.95">Plan 3 - $49.95</option>
+										<option value="Plan 4 - 79.95">Plan 4 - $79.95</option>
+										<option value="Plan 5 - 99.95">Plan 5 - $99.95</option>
+										<option value="Plan 6 - 149.95">Plan 6 - $149.95</option>
+										<option value="Plan 7 - 299.95">Plan 7 - $299.95</option>
+										<option value="Plan 8 - 549.95">Plan 8 - $549.95</option>
+									</select>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td id="volume_new">
+						<br/>
+						<table align="center">
+							<tr>
+								<td width="200px">Base Monthly Fee New:</td>
+								<td width="200px">
+									<input type="text" name="new_vol_base" id="new_vol_base" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">Email Usage Fee New:</td>
+								<td width="200px">
+									<input type="text" name="new_vol_fee" id="new_vol_fee" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">Email Usage New:</td>
+								<td width="200px">
+									<input type="text" name="new_vol_usage" id="new_vol_usage" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">CPM New:</td>
+								<td width="200px">
+									<input type="text" name="new_vol_cpm" id="new_vol_cpm" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">Prepaid New:</td>
+								<td width="200px">
+									<input type="text" name="new_vol_pool" id="new_vol_pool" value="N/A">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">Prepaid Set By:</td>
+								<td width="200px">
+									<input type="text" name="prepaid_set_by" id="prepaid_set_by" value="N/A">
+								</td>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td id="contacts_new">
+						<br/>
+						<table align="center">
+							<tr>
+								<td width="200px">Base Monthly Fee New:</td>
+								<td width="200px">
+									<input type="text" name="new_con_base" id="new_con_base" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">Contact Usage Fee New:</td>
+								<td width="200px">
+									<input type="text" name="new_con_fee" id="new_con_fee" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">Contact Usage New:</td>
+								<td width="200px">
+									<input type="text" name="new_con_usage" id="new_con_usage" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">Contact Overage New:</td>
+								<td width="200px">
+									<input type="text" name="new_con_ovg" id="new_con_ovg" value="0">
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td id="standard_new">
+						<br/>
+						<table align="center">
+							<tr>
+								<td width="200px">Plan Code New:</td>
+								<td width="200px">
+									<select name="new_standard_plan" id="new_standard_plan">
+										<option value="No new plan selected!">select plan</option>
+										<option value="Plan 1 - 19.95">Plan 1 - $19.95</option>
+										<option value="Plan 2 - 29.95">Plan 2 - $29.95</option>
+										<option value="Plan 3 - 49.95">Plan 3 - $49.95</option>
+										<option value="Plan 4 - 79.95">Plan 4 - $79.95</option>
+										<option value="Plan 5 - 99.95">Plan 5 - $99.95</option>
+										<option value="Plan 6 - 149.95">Plan 6 - $149.95</option>
+										<option value="Plan 7 - 299.95">Plan 7 - $299.95</option>
+										<option value="Plan 8 - 549.95">Plan 8 - $549.95</option>
+									</select>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td id="reset_generate_buttons">
+			<table align="center">
+				<tr>
+					<td width="200px" style="text-align: center">
+						<input type="button" value="Reset" onclick="reset_all()">
+					</td>
+					<td width="200px" style="text-align: center">
+						<input type="button" value="Generate" onclick="generateTicket(salesTeam, is_downgrade, accountName, accountP2K, today, old_plan_type, new_plan_type)">
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td style="text-align: center;">
+			<table class="all_ticket_info" id="all_ticket_info" align="center">
+				<tr>
+					<td id="ticket_info" style="text-align: center">
+						<table align="center" id="mrr">
+							<tr>
+								<td width="200px">Old MRR</td>
+								<td width="200px">
+									<input type="text" name="old_mrr" id="old_mrr" value="0">
+								</td>
+							</tr>
+							<tr>
+								<td width="200px">New MRR</td>
+								<td width="200px">
+									<input type="text" name="new_mrr" id="new_mrr" value="0">
+								</td>
+							</tr>
+						</table>
+						<table width="400px" align="center">
+							<tr>
+								<td style="text-align: left">
+									Ticket Name:</br>
+									<input type="text" name="ticket_name" size="60" id="ticket_name"></br>
+									</br>
+									Ticket Description:</br>
+									<textarea rows="10" cols="62" name="ticket_description" id="ticket_description">
+									</textarea>
+									</br>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td id="email_info">
+						<table width="400px" align="center">
+							<tr>
+								<td style="text-align: left">
+									Email To:</br>
+									<input type="text" name="email_to" id="email_to" size="60"></br>
+									</br>
+									Email Subject:</br>
+									<input type="text" name="email_subject" id="email_subject" size="60"></br>
+									</br>
+									Email Content:</br>
+									<textarea rows="10" cols="62" name="email_content" id="email_content">
+									</textarea></br>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+
+</body>
+<script>
+/*	@purpose:	Name of support rep using the form, used in signature
+	 */
+	var supportRep = "Alex Hartshorn";
+	
+	// Variables used in functions
+	var old_plan_type = 0;
+	var new_plan_type = 0;
+	var is_weekend = false;
+	var is_downgrade = false;
+	
+	/*	@purpose:	Gets information input for account information
+	 */
+	var salesTeam = document.getElementById("agents");
+	var accountName = document.getElementById("companyname");
+	var accountP2K = document.getElementById("companyp2k");
+	
+	// MRR
+	var oldMRR = document.getElementById("old_mrr");
+	var newMRR = document.getElementById("new_mrr");
+	
+	/*	@purpose:	Gets the date in MMMM dd, YYYY format.
+	 */
+	var today = new Date().toLocaleDateString('en-US', { 
+		day : 'numeric',
+		month : 'long',
+		year : 'numeric'
+	});
+	
+	/*	@purpose:	Returns the signature for emails sent to reps
+	 */
+	function signature(supportRep) {
+		return "\n\nRegards\n" + supportRep + "\nCompany Support";
+	}
+	
+	// Show weekend churn day if "Weekend Churn" checked
+	function weekend_churn() {
+		is_weekend = document.getElementById("postdate").checked;
+		if (is_weekend) {
+			document.getElementById("weekend_days").style.display = "block";
+		} else {
+			reset_weekend();
+		}
+	}
+	
+	// Show and hide Downgrade Type Panel
+	function show_downgrade() {
+		document.getElementById("downgrade_options").style.display = "table-row";
+		is_downgrade = true;
+	}
+	function hide_downgrade() {
+		document.getElementById("downgrade_options").style.display = "none";
+		is_downgrade = false;
+	}
+	
+	// Show and hide different types of downgrades
+	function show_old_volume() {
+		document.getElementById("volume_old").style.display = "table-row";
+		document.getElementById("contacts_old").style.display = "none";
+		document.getElementById("standard_old").style.display = "none";
+		old_plan_type = 1;
+	}
+	function show_old_contact() {
+		document.getElementById("volume_old").style.display = "none";
+		document.getElementById("contacts_old").style.display = "table-row";
+		document.getElementById("standard_old").style.display = "none";
+		old_plan_type = 2;
+	}
+	function show_old_standard() {
+		document.getElementById("volume_old").style.display = "none";
+		document.getElementById("contacts_old").style.display = "none";
+		document.getElementById("standard_old").style.display = "table-row";
+		old_plan_type = 3;
+	}
+	function hide_all_old() {
+		document.getElementById("volume_old").style.display = "none";
+		document.getElementById("contacts_old").style.display = "none";
+		document.getElementById("standard_old").style.display = "none";
+		old_plan_type = 0;
+	}
+	function show_new_volume() {
+		document.getElementById("volume_new").style.display = "table-row";
+		document.getElementById("contacts_new").style.display = "none";
+		document.getElementById("standard_new").style.display = "none";
+		new_plan_type = 1;
+	}
+	function show_new_contact() {
+		document.getElementById("volume_new").style.display = "none";
+		document.getElementById("contacts_new").style.display = "table-row";
+		document.getElementById("standard_new").style.display = "none";
+		new_plan_type = 2;
+	}
+	function show_new_standard() {
+		document.getElementById("volume_new").style.display = "none";
+		document.getElementById("contacts_new").style.display = "none";
+		document.getElementById("standard_new").style.display = "table-row";
+		new_plan_type = 3;
+	}
+	function hide_all_new() {
+		document.getElementById("volume_new").style.display = "none";
+		document.getElementById("contacts_new").style.display = "none";
+		document.getElementById("standard_new").style.display = "none";
+		new_plan_type = 0;
+	}
+	
+	// Show and hide ticket panel
+	function show_ticket() {
+		document.getElementById("all_ticket_info").style.display = "table";
+	}
+	function hide_ticket() {
+		document.getElementById("all_ticket_info").style.display = "none";
+	}
+
+	/*	@purpose:	Resets all panels
+	 */
+	function reset_all() {
+		reset_account_info();
+		reset_weekend();
+		resetPlanSelect("old");
+		resetPlanSelect("new");
+		hide_all_old();
+		hide_all_new();
+		resetVolume("old");
+		resetVolume("new");
+		resetContact("old");
+		resetContact("new");
+		resetStandardPlan("old");
+		resetStandardPlan("new");
+		hide_ticket();
+	}
+	
+	/*	@purpose:	Resets Account Info Panel
+	 */
+	function reset_account_info() {
+		document.getElementById("agents").value = "Default";
+		document.getElementById("companyname").value = "";
+		document.getElementById("companyp2k").value = "";
+		document.getElementById("postdate").checked = false;
+		document.getElementById("typecancel").checked = true;
+		document.getElementById("typedowngrade").checked = false;
+		hide_downgrade();
+		hide_ticket();
+	}
+	
+	/*	@purpose:	Resets Plan Select Area
+	 */
+	function resetPlanSelect(version) {
+		document.getElementById(version + "_type_volume").checked = false;
+		document.getElementById(version + "_type_contact").checked = false;
+		document.getElementById(version + "_type_standard").checked = false;
+	}
+
+	/*	@purpose:	Resets weekend churn panel
+	 */
+	function reset_weekend() {
+		document.getElementById("weekend_days").style.display = "none";
+		document.getElementById("weekend_days").selectedIndex = "0";
+	}
+	
+	/*	@purpose:	Resets Standard based plans to input
+	 */
+	function resetStandardPlan(version) {
+		document.getElementById(version + "_standard_plan").selectedIndex = "0";
+	}
+
+	/*	@purpose:	Resets Contact based plans to input
+	 */
+	function resetContact(version) {
+		document.getElementById(version + "_con_base").value = 0;
+		document.getElementById(version + "_con_fee").value = 0;
+		document.getElementById(version + "_con_usage").value = 0;
+		document.getElementById(version + "_con_ovg").value = 0;
+	}
+
+	/*	@purpose:	Resets Volume based plans to input
+	 */
+	function resetVolume(version) {
+		document.getElementById(version + "_vol_base").value = 0;
+		document.getElementById(version + "_vol_fee").value = 0;
+		document.getElementById(version + "_vol_usage").value = 0;
+		document.getElementById(version + "_vol_cpm").value = 0;
+		document.getElementById(version + "_vol_pool").value = "N/A";
+		if (version.localeCompare("new") == 0) {
+			document.getElementById("prepaid_set_by").value = "N/A";
+		}
+	}
+
+	// Calculate MRR
+	function calculate_mrr(plan_type, old_new) {
+		var mrr = 0;
+		switch(plan_type) {
+			case 1:		// Volume Based Plan
+				if (old_new == 1) {
+					mrr += document.getElementById("old_vol_base").value;
+					mrr += document.getElementById("old_vol_fee").value;
+					mrr = parseFloat(mrr);
+				}
+				else if (old_new == 2) {
+					mrr += document.getElementById("new_vol_base").value;
+					mrr += document.getElementById("new_vol_fee").value;
+					mrr = parseFloat(mrr);
+				}
+				break;
+			case 2:		// Contact Based Plan
+				if (old_new == 1) {
+					mrr += document.getElementById("old_con_base").value;
+					mrr += document.getElementById("old_con_fee").value;
+					mrr = parseFloat(mrr);
+				} else if (old_new == 2) {
+					mrr += document.getElementById("new_con_base").value;
+					mrr += document.getElementById("new_con_fee").value;
+					mrr = parseFloat(mrr);
+				}
+				break;
+			case 3:		// Standard Company Plan
+				if (old_new == 1) {
+					var plan_code = document.getElementById("old_standard_plan");
+					mrr = plan_code.options[plan_code.selectedIndex].value;
+				} else if (old_new == 2) {
+					var plan_code = document.getElementById("new_standard_plan");
+					mrr = plan_code.options[plan_code.selectedIndex].value;
+				}
+				break;
+			default:
+				mrr += 0;
+				break;
+		}
+		return mrr;
+	}
+	
+	/*	@purpose:	Generates the information to put in the ticket/email in ticket system.
+	 */
+	function generateTicket(salesTeam, is_downgrade, accountName, accountP2K, today, old_plan_type, new_plan_type) {
+		// Elements of each section of the generated ticket/email
+		var ticketSubject = document.getElementById("ticket_name");
+		var ticketDescription = document.getElementById("ticket_description");
+		var emailTo = document.getElementById("email_to");
+		var emailSubject = document.getElementById("email_subject");
+		var emailContent = document.getElementById("email_content");
+	
+		// Things used in every type of ticket
+		var salesName = salesTeam.options[salesTeam.selectedIndex].value;
+		var churnString = " per Churn Form";
+		var ticketDesc = accountInfo(accountName, accountP2K, salesName);
+		
+		if (accountName.value.localeCompare("") == 0) {
+			alert("You have not entered an account name!");
+		}
+		if (accountP2K.value.localeCompare("") == 0) {
+			alert("You have not entered an account P2K!");
+		}
+		
+		if (is_downgrade) {
+			churnString = "Package Downgrade" + churnString;
+			switch(old_plan_type) {
+				case 1:
+					ticketDesc = ticketDesc + getVolumePlan("old");
+					break;
+				case 2:
+					ticketDesc = ticketDesc + getContactPlan("old");
+					break;
+				case 3:
+					ticketDesc = ticketDesc + getStandardPlan("old");
+					break;
+				default:
+					ticketDesc = ticketDesc + "\nNo old plan selected!";
+			}
+			if (!(new_plan_type == 3 && old_plan_type == 3)) {
+				ticketDesc = ticketDesc + "\n";
+			}
+			switch(new_plan_type) {
+				case 1:
+					ticketDesc = ticketDesc + getVolumePlan("new");
+					break;
+				case 2:
+					ticketDesc = ticketDesc + getContactPlan("new");
+					break;
+				case 3:
+					ticketDesc = ticketDesc + getStandardPlan("new");
+					break;
+				default:
+					ticketDesc = ticketDesc + "\nNo new plan selected!";
+			}
+			ticketDesc = ticketDesc + "\n" + ticketDescEnd(is_weekend, "downgrade", salesName);
+			emailContent.value = generateEmail(salesName, "downgrade");
+		} else {
+			churnString = "Account Cancellation" + churnString;
+			emailContent.value = generateEmail(salesName, "cancellation");
+			ticketDesc = ticketDesc + ticketDescEnd(is_weekend, "cancel", salesName);
+		}
+		ticketSubject.value = churnString;
+		ticketDescription.value = ticketDesc;
+		emailTo.value = setSalesEmail(salesName);
+		emailSubject.value = accountName.value + " - " + accountP2K.value + " - " + churnString;
+		show_ticket();
+	}
+	
+	/*	@purpose:	Returns the account information as a string for the ticket
+	 */
+	function accountInfo(accountName, accountP2K, salesName) {
+		return "Account Name: " + accountName.value + "\nAccount P2K: " + accountP2K.value + "\nSales Rep: " + salesName + "\n";
+	}
+	
+    /*  @purpose:   Returns the ticket information that goes on all tickets (cancel or downgrade)
+     */
+	function ticketDescEnd(is_weekend, version, salesName) {
+		var ticketDesc = "";
+		if (is_weekend) {
+			churnWeekDay = document.getElementById("weekend_days").options[weekend_days.selectedIndex].value;
+			if (churnWeekDay.localeCompare("Default") != 0) {
+				ticketDesc = ticketDesc + "\nChurn was dated for " + churnWeekDay + " so the " + version + " was done the Friday before.\n"
+			} else {
+				alert("Weekend churn is selected but no day has been chosen!");
+			}
+		}
+		return ticketDesc + "\nEmailed the sales rep " + salesName + ", to inform them that the " + version + " was completed."
+	}
+	
+	/*	@purpose:	Returns the contact plan information as a string for the ticket
+	 */
+	function getContactPlan(version) {
+		var base = document.getElementById(version + "_con_base").value;
+		var fee = document.getElementById(version + "_con_fee").value;
+		var usage = document.getElementById(version + "_con_usage").value;
+		var overage = document.getElementById(version + "_con_ovg").value;
+		return "\nBase Monthly Fee " + version + ": " + base +
+				"\nContact Usage Fee " + version + ": " + fee + 
+				"\nContact Usage " + version + ": " + usage + 
+				"\nContact Overage " + version + ": " + overage;
+	}
+	
+	/*	@purpose:	Returns the volume plan information as a string for the ticket
+	 */
+	function getVolumePlan(version) {
+		var base = document.getElementById(version + "_vol_base").value;
+		var fee = document.getElementById(version + "_vol_fee").value;
+		var usage = document.getElementById(version + "_vol_usage").value;
+		var overage = document.getElementById(version + "_vol_cpm").value;
+		var pool = document.getElementById(version + "_vol_pool").value;
+		if (version.localeCompare("new") == 0) {
+			var set = document.getElementById("prepaid_set_by").value;
+			return "\nBase Monthly Fee " + version + ": " + base +
+				"\nEmail Usage Fee " + version + ": " + fee + 
+				"\nEmail Usage " + version + ": " + usage + 
+				"\nCPM " + version + ": " + overage + 
+				"\nPrepaid " + version + ": " + pool +
+				"\nPrepaid Set By: " + set;
+		} else {
+			return "\nBase Monthly Fee " + version + ": " + base +
+				"\nEmail Usage Fee " + version + ": " + fee + 
+				"\nEmail Usage " + version + ": " + usage + 
+				"\nCPM " + version + ": " + overage + 
+				"\nPrepaid " + version + ": " + pool;
+		}
+	}
+	
+	/*	@purpose:	Returns the standard plan information as a string for the ticket
+	 */
+	function getStandardPlan(version) {
+		var plan_code = document.getElementById(version + "_standard_plan");
+		return "\nStandard Plan " + version + ": " + plan_code.options[plan_code.selectedIndex].value;
+	}
+	
+	/*	@purpose:	Generates the text of the email to send to the sales rep
+	 */
+	function generateEmail(salesPerson, ticketType) {
+		if (salesPerson.localeCompare("Default") == 0) {
+			return "No Sales Agent Selected.";
+		}
+		var emailContent = "Hey " + salesPerson +",\n\nThis is just a heads up/confirmation that the " + ticketType + " was made on " + today + " as per the churn form.";
+		if (is_weekend) {
+			churnWeekDay = document.getElementById("weekend_days").options[weekend_days.selectedIndex].value;
+			if (churnWeekDay.localeCompare("Default") != 0) {
+				emailContent = emailContent + "\n\nThe " + ticketType + " was dated for " + churnWeekDay + " so it was done the Friday before."
+			}
+		}
+		emailContent = emailContent + signature(supportRep);
+		return emailContent;
+	}
+	
+	/*	@purpose:	Returns the email address of the selected sales rep
+	 */
+	function setSalesEmail(salesName) {
+		var salesAddress = "";
+		switch(salesName) {
+			case "Agent01":
+				salesAddress = "agent01@company.com";
+				break;
+			case "Agent02":
+				salesAddress = "agent02@company.com";
+				break;
+			case "Agent03":
+				salesAddress = "agent03@company.com";
+				break;
+			case "Agent04":
+				salesAddress = "agent04@company.com";
+				break;
+			case "Agent05":
+				salesAddress = "agent05@company.com";
+				break;
+			case "Agent06":
+				salesAddress = "agent06@company.com";
+				break;
+			case "Agent07":
+				salesAddress = "agent07@company.com";
+				break;
+			case "Agent08":
+				salesAddress = "agent08@company.com";
+				break;
+			case "Agent09":
+				salesAddress = "agent09@company.com";
+				break;
+			case "Agent10":
+				salesAddress = "agent10@company.com";
+				break;
+			case "Default":
+				salesAddress = "No Sales Agent Selected";
+				alert("No sales agent selected.");
+		}
+		return salesAddress;
+	}
+
+</script>
+
+</html>
