@@ -1,15 +1,15 @@
 <!--
 	@author:	Alex Hartshorn
 	@editor:	Notepad++
-	@purpose: 	Generate ticket and email information for cancellations on
-				Company churn form.  All information is anonymized to allow posting on GitHub.
+	@purpose: 	Generate ticket and email information for cancellations on Company churn form.  
+			All information is anonymized to allow posting on GitHub.
 	@changelog:	Can now select what kind of plan they were on / going to 
-				(instead of just volume based custom plans).
+			(instead of just volume based custom plans).
 	@editing:	Use Ctrl+F to find
-				Sales Agents: 	Add/remove option to id "agents" (line 105)
-								Add/remove email to switch function setSalesEmail (line 820)
-				Signature:		Edit name in var supportRep (line 443)
-								Edit text in function signature (line 471)
+			Sales Agents: 	Add/remove option to id "agents" (line 105)
+					Add/remove email to switch function setSalesEmail (line 820)
+			Signature:	Edit name in var supportRep (line 443)
+					Edit text in function signature (line 471)
 -->
 <html>
 
@@ -49,16 +49,16 @@ a:hover {
 	vertical-align: top;
 }
 /*  Churn that occurs on the weekend is handled on the Friday before.  weekend_days is
- *	irrelevant if the cancellation is for M-F, thus hidden unless Weekend Churn is
- *	checked.
+ *  irrelevant if the cancellation is for M-F, thus hidden unless Weekend Churn is
+ *  checked.
  */
 #weekend_days {
 	display: none;
 }
 
-/*	Downgrade Options is the class for the entire downgrade section, then each
+/*  Downgrade Options is the class for the entire downgrade section, then each
  *  option id is for each individual account type.  Downgrade Options includes the
- *	account type selections section, and will display any time downgrade is selected.
+ *  account type selections section, and will display any time downgrade is selected.
  */
 .downgrade_options {
 	display: none;
@@ -437,8 +437,8 @@ a:hover {
 
 </body>
 <script>
-/*	@purpose:	Name of support rep using the form, used in signature
-	 */
+	/*  @purpose:	Name of support rep using the form, used in signature
+ 	*/
 	var supportRep = "Alex Hartshorn";
 	
 	// Variables used in functions
@@ -447,7 +447,7 @@ a:hover {
 	var is_weekend = false;
 	var is_downgrade = false;
 	
-	/*	@purpose:	Gets information input for account information
+	/*  @purpose:	Gets information input for account information
 	 */
 	var salesTeam = document.getElementById("agents");
 	var accountName = document.getElementById("companyname");
@@ -457,7 +457,7 @@ a:hover {
 	var oldMRR = document.getElementById("old_mrr");
 	var newMRR = document.getElementById("new_mrr");
 	
-	/*	@purpose:	Gets the date in MMMM dd, YYYY format.
+	/*  @purpose:	Gets the date in MMMM dd, YYYY format.
 	 */
 	var today = new Date().toLocaleDateString('en-US', { 
 		day : 'numeric',
@@ -549,7 +549,7 @@ a:hover {
 		document.getElementById("all_ticket_info").style.display = "none";
 	}
 
-	/*	@purpose:	Resets all panels
+	/*  @purpose:	Resets all panels
 	 */
 	function reset_all() {
 		reset_account_info();
@@ -567,7 +567,7 @@ a:hover {
 		hide_ticket();
 	}
 	
-	/*	@purpose:	Resets Account Info Panel
+	/*  @purpose:	Resets Account Info Panel
 	 */
 	function reset_account_info() {
 		document.getElementById("agents").value = "Default";
@@ -580,7 +580,7 @@ a:hover {
 		hide_ticket();
 	}
 	
-	/*	@purpose:	Resets Plan Select Area
+	/*  @purpose:	Resets Plan Select Area
 	 */
 	function resetPlanSelect(version) {
 		document.getElementById(version + "_type_volume").checked = false;
@@ -588,7 +588,7 @@ a:hover {
 		document.getElementById(version + "_type_standard").checked = false;
 	}
 
-	/*	@purpose:	Resets weekend churn panel
+	/*  @purpose:	Resets weekend churn panel
 	 */
 	function reset_weekend() {
 		document.getElementById("weekend_days").style.display = "none";
@@ -596,13 +596,13 @@ a:hover {
 		is_weekend = false;
 	}
 	
-	/*	@purpose:	Resets Standard based plans to input
+	/*  @purpose:	Resets Standard based plans to input
 	 */
 	function resetStandardPlan(version) {
 		document.getElementById(version + "_standard_plan").selectedIndex = "0";
 	}
 
-	/*	@purpose:	Resets Contact based plans to input
+	/*  @purpose:	Resets Contact based plans to input
 	 */
 	function resetContact(version) {
 		document.getElementById(version + "_con_base").value = 0;
@@ -611,7 +611,7 @@ a:hover {
 		document.getElementById(version + "_con_ovg").value = 0;
 	}
 
-	/*	@purpose:	Resets Volume based plans to input
+	/*  @purpose:	Resets Volume based plans to input
 	 */
 	function resetVolume(version) {
 		document.getElementById(version + "_vol_base").value = 0;
@@ -667,7 +667,7 @@ a:hover {
 		return mrr;
 	}
 	
-	/*	@purpose:	Generates the information to put in the ticket/email in ticket system.
+	/*  @purpose:	Generates the information to put in the ticket/email in ticket system.
 	 */
 	function generateTicket(salesTeam, is_downgrade, accountName, accountP2K, today, old_plan_type, new_plan_type) {
 		// Elements of each section of the generated ticket/email
@@ -734,14 +734,14 @@ a:hover {
 		show_ticket();
 	}
 	
-	/*	@purpose:	Returns the account information as a string for the ticket
+	/*  @purpose:	Returns the account information as a string for the ticket
 	 */
 	function accountInfo(accountName, accountP2K, salesName) {
 		return "Account Name: " + accountName.value + "\nAccount P2K: " + accountP2K.value + "\nSales Rep: " + salesName + "\n";
 	}
 	
-    /*  @purpose:   Returns the ticket information that goes on all tickets (cancel or downgrade)
-     */
+    	/*  @purpose:   Returns the ticket information that goes on all tickets (cancel or downgrade)
+     	*/
 	function ticketDescEnd(is_weekend, version, salesName) {
 		var ticketDesc = "";
 		if (is_weekend) {
@@ -755,7 +755,7 @@ a:hover {
 		return ticketDesc + "\nEmailed the sales rep " + salesName + ", to inform them that the " + version + " was completed."
 	}
 	
-	/*	@purpose:	Returns the contact plan information as a string for the ticket
+	/*  @purpose:	Returns the contact plan information as a string for the ticket
 	 */
 	function getContactPlan(version) {
 		var base = document.getElementById(version + "_con_base").value;
@@ -768,7 +768,7 @@ a:hover {
 				"\nContact Overage " + version + ": " + overage;
 	}
 	
-	/*	@purpose:	Returns the volume plan information as a string for the ticket
+	/*  @purpose:	Returns the volume plan information as a string for the ticket
 	 */
 	function getVolumePlan(version) {
 		var base = document.getElementById(version + "_vol_base").value;
@@ -793,14 +793,14 @@ a:hover {
 		}
 	}
 	
-	/*	@purpose:	Returns the standard plan information as a string for the ticket
+	/*  @purpose:	Returns the standard plan information as a string for the ticket
 	 */
 	function getStandardPlan(version) {
 		var plan_code = document.getElementById(version + "_standard_plan");
 		return "\nStandard Plan " + version + ": " + plan_code.options[plan_code.selectedIndex].value;
 	}
 	
-	/*	@purpose:	Generates the text of the email to send to the sales rep
+	/*  @purpose:	Generates the text of the email to send to the sales rep
 	 */
 	function generateEmail(salesPerson, ticketType) {
 		if (salesPerson.localeCompare("Default") == 0) {
@@ -817,7 +817,7 @@ a:hover {
 		return emailContent;
 	}
 	
-	/*	@purpose:	Returns the email address of the selected sales rep
+	/*  @purpose:	Returns the email address of the selected sales rep
 	 */
 	function setSalesEmail(salesName) {
 		var salesAddress = "";
