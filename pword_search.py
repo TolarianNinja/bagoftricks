@@ -1,9 +1,10 @@
 """
     @Author: Tolarian Ninja
-    @Instructions: 1) Export data vault from password manager and copy column
+    @Instructions: 1) Download breached.txt from bagoftricks files
+                   2) Export data vault from password manager and copy column
                       with site URLs into a text file, save as sites.txt
                    2) Put sites.txt, breached.txt and pword_search.py into same
-                      directory.
+                      directory
                    3) Run pword_search.py to get list of all breached sites in
                       sites.txt, google those sites to check when the breach was
 
