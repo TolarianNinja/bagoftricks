@@ -1,6 +1,6 @@
 # Purpose:      Script to download images from Scryfall by set and use filenames
 #               compatible with MagicAlbum
-# Author:       TheCodeNinja / Alex Hartshorn using Scrython
+# Author:       TolarianNinja / Alex Hartshorn using Scrython
 #               (Scryfall for Python lib)
 # Scrython:     https://github.com/NandaScott/Scrython/
 # MagicAlbum:   https://www.slightlymagic.net/wiki/Magic_Album
@@ -216,7 +216,7 @@ set_name = [ "Unfinity",
 # Remove zeros when adding information for next set
 boundaries = [ [ 245, 277, 287, 496, 528, 540 ], # Unfinity
                [ 362, 375, 471, 553, 646, 935, 940 ], # Commander Legends - Battle for Baldur's Gate
-               [ 282, 296, 360, 361, 406, 441, 450, 461, 468 ], # Streets of New Capenna
+               [ 282, 296, 360, 361, 406, 441, 450, 461, 468, 600 ], # Streets of New Capenna
                [ 94, 186, 191, 448 ], # New Capenna Commander
                [ 0 ], # Heads I Win, Tails You Lose
                [ 0 ], # Game Day Promos
@@ -416,16 +416,16 @@ card_versions = [ [ "", " [Showcase]", "", " [Galaxy Foil]", " [Showcase Galaxy]
                   [ " [Surge]", "", " [Promo]" ] # 98 Warhammer 40K
                   ]
 
-c_set = 98
+c_set = 2
 current_version = 0
 
 # Query String
 query = '++e:' + set_code[c_set]
 
 # Basic Land Fixers
-basics = [ "Forest", "Island", "Mountain", "Plains", "Swamp",
+basics = [ "Forest", "Island", "Mountain", "Plains", "Swamp", "Wastes",
            "Snow-Covered Forest", "Snow-Covered Island", "Snow-Covered Mountain",
-           "Snow-Covered Plains", "Snow-Covered Swamp", "Wastes" ]
+           "Snow-Covered Plains", "Snow-Covered Swamp", "Snow-Covered Wastes" ]
 basic_counts = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
 
 # Images go here
@@ -560,14 +560,22 @@ def get_sets_search():
     print(str(set_types))
 
 # File Names to Download
+# Uncomment the if block to download png instead of jpg files
+# These have transparency on the corners which raises the size by an order of magnitude
+# With all variants in png, average hard drive space is ~1GB per set vs ~70MB per set jpg
 def get_images(cards):
-    eng = image_path + "ENG\\"
-    eng_foil = image_path + "ENG FOIL\\"
     os.makedirs(image_path,511,True)
-    os.makedirs(eng,511,True)
-    os.makedirs(eng_foil,511,True)
+    current_lang = ""
     for card in cards:
         time.sleep(0.5)
+        if card["lang"] not in current_lang:
+            current_lang = card["lang"]
+            lang_path = change_lang_dir(card, image_path) + "\\"
+            lang_path_foil = change_lang_dir(card, image_path) + " FOIL\\"
+            if "nonfoil" in card["finishes"]:
+                os.makedirs(lang_path,511,True)
+            else:
+                os.makedirs(lang_path_foil,511,True)
         if card["digital"]:
             continue
  #       if card["highres_image"]:
@@ -577,9 +585,9 @@ def get_images(cards):
             c_format = "large"
             ext = "jpg"
         if "nonfoil" in card["finishes"]:
-            os.chdir(eng)
+            os.chdir(lang_path)
         else:
-            os.chdir(eng_foil)
+            os.chdir(lang_path)
         if card["layout"] == "transform" or card["layout"] == "modal_dfc":
             for i in range(0, 2):
                 file_name = get_filenames(card["card_faces"][i], card["collector_number"])
@@ -599,6 +607,42 @@ def get_images(cards):
                 handler.close()
             print("Downloaded " + file_name + "...")
     print("Work complete.")
+
+def fix_lang(card):
+    lang = card["lang"]
+    match lang:
+        case "en":
+            return "ENG"
+        case "de":
+            return "GER"
+        case "fr":
+            return "FRA"
+        case "it":
+            return "ITA"
+        case "ja":
+            return "JPN"
+        case "ko":
+            return "KOR"
+        case "pt":
+            return "POR"
+        case "es":
+            return "SPA"
+        case "ru":
+            return "RUS"
+        case "zhs":
+            return "ZHC"
+        case "zht":
+            return "ZHT"
+        case "ph":
+            return "PHY"
+        case _:
+            return "ENG"
+
+def change_lang_dir(card, image_path):
+    lang_prefix = fix_lang(card)
+    lang_path = image_path + lang_prefix
+    print("\nLanguage changed to " + lang_prefix + ".")
+    return lang_path
 
 def get_card(name):
     card = scrython.cards.Search(q=name)
@@ -656,13 +700,22 @@ def get_secret_lairs(cards):
     os.makedirs(image_path,511,True)
     os.makedirs(eng,511,True)
     os.makedirs(eng_foil,511,True)
+    os.makedirs(image_path,511,True)
+    current_lang = ""
     for card in cards:
         file_name = ""
+        time.sleep(0.5)
+        col_num = ""
+        if card["lang"] not in current_lang:
+            current_lang = card["lang"]
+            lang_path = change_lang_dir(card, image_path)
+            os.makedirs(lang_path + "\\",511,True)
+            os.makedirs(lang_path + " FOIL\\",511,True)
         if "//" in card["name"]:
             file_name = str(card["name"]).replace(" // ",'_')
         else:
             file_name = str(card["name"])
-        file_name = file_name + " [" + str(card["collector_number"]) + "]"
+        file_name = file_name + " [" + str(col_num + card["collector_number"]) + "]"
         if card["highres_image"]:
             c_format = "png"
             ext = "png"
