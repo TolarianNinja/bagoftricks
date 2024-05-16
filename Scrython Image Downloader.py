@@ -739,77 +739,7 @@ def get_secret_lairs(cards):
             print("Downloaded " + file_name + "...")
     print("Work complete.")
 
-# needs to figure out how to read
-def deck_magic_album(file_name):
-    deck_file = open(file_name, 'r')
-    deck = deck_file.readlines()
-    for line in deck:
-        line = line.rstrip('\r\n')
-        print(line)
 
-"""
-// Deck file for Magic Workstation
-
-\t  qty [MWS_SET_CODE] <card_name>
-    4   [4E]           Birds of Paradise
-"""
-# needs set code translator
-def deck_magic_workstation(file_name):
-    deck_file = open(file_name, 'r')
-    deck = deck_file.readlines()
-    for line in deck:
-        line = line.rstrip('\r\n')
-        print(line)
-
-"""
-[metadata]
-Name=<deckname>
-[Commander]
-1 <commander_name>|SET_CODE
-[Main]
-qty <card_name>|SET_CODE
-[Sideboard]
-qty <card_name>|SET_CODE
-"""
-def deck_apprentice(file_name):
-    deck_file = open(file_name, 'r')
-    deck = deck_file.readlines()
-    for line in deck:
-        line = line.rstrip('\r\n')
-        print(line)
-
-"""
-XML file
-"""
-def deck_cockatrice(file_name):
-    deck_file = open(file_name, 'r')
-    deck = deck_file.readlines()
-    for line in deck:
-        print(line)
-
-"""
-Deck
-qty <card_name> (SET_CODE) collector_number
-
-Sideboard
-qty <card_name> (SET_CODE) collector_number
-"""
-def deck_arena(file_name):
-    deck_file = open(file_name, 'r')
-    deck = deck_file.readlines()
-    for line in deck:
-        print(line)
-
-"""
-qty <card_name>  //Deck
-
-qty <card_name>  //Board
-"""
-def deck_mtgo(file_name):
-    deck_file = open(file_name, 'r')
-    deck = deck_file.readlines()
-    for line in deck:
-        print(line)
 
 def get_set_raw(code):
     set_list = scrython.sets.Code(code=code)
@@ -938,9 +868,6 @@ def sets_by_type():
 #get_svg_files()
 #get_set_code("tsr")
 #get_set_raw("tsr")
-#deck_apprentice("D:\\Magic the Gathering\\Decks\\DCK Files\\Arcades and the Old Walls.dck")
-#deck_magic_workstation("D:\\Magic the Gathering\\Decks\\In Production\\Lyra.mwDeck")
-#deck_magic_album("D:\\Magic the Gathering\\Decks\\In Production\\Narfi - Dimir - Zombie.mad")
 #get_languages(get_set_cards())
 #get_images(get_set_cards_range(get_set_cards(),262, 442))
 get_images(get_set_cards())
