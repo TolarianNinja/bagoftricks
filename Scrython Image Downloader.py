@@ -7,6 +7,9 @@
 
 import scrython, time, shutil, requests, os
 
+global use_png
+
+use_png = False
 
 # Set Code
 set_code = [ "unf",
@@ -107,7 +110,8 @@ set_code = [ "unf",
              "rvr",
              "rex",
              "3ed",
-             "40k"
+             "40k",
+             "pwoe"
              ]
 
 # Set Name
@@ -135,7 +139,7 @@ set_name = [ "Unfinity",
              "Zendikar Rising Commander",
              "Zendikar Rising Expeditions",
              "Secret Lair - Ultimate Edition",
-             "Secret Lair Drops",
+             "Secret Lair Drop",
              "Commander Legends",
              "Judge Gift Cards",
              "Strixhaven - School of Mages",
@@ -209,7 +213,8 @@ set_name = [ "Unfinity",
              "Ravnica Remastered",
              "Jurassic World Collection",
              "3rd Revised Edition",
-             "Warhammer 40000 Commander"
+             "Warhammer 40000 Commander",
+             "Wilds of Eldraine Promos"
              ]
 
 # Boundaries and Versions
@@ -312,7 +317,8 @@ boundaries = [ [ 245, 277, 287, 496, 528, 540 ], # Unfinity
                [ 292, 302, 416, 446, 467 ], # RVR
                [ 27, 0 ],
                [ 0 ],
-               [ 9, 322, 900 ]
+               [ 9, 322, 900 ],
+               [ 0 ]
                ]
 
 card_versions = [ [ "", " [Showcase]", "", " [Galaxy Foil]", " [Showcase Galaxy]", " [Galaxy Foil]", " [Promo]" ], # 0 Unfinity
@@ -413,10 +419,11 @@ card_versions = [ [ "", " [Showcase]", "", " [Galaxy Foil]", " [Showcase Galaxy]
                   [ "", " [Alt Art]", " [Retro]", " [Alt Art]", "", " [Promo]" ], # 95 Ravnica Remastered
                   [ "", " [Embossed]"], # 96 Jurassic World Collection
                   [ "" ], # 97 Revised
-                  [ " [Surge]", "", " [Promo]" ] # 98 Warhammer 40K
+                  [ " [Surge]", "", " [Promo]" ], # 98 Warhammer 40K
+                  [ "" ] # 99 Wilds of Eldraine Promos
                   ]
 
-c_set = 2
+c_set = 24
 current_version = 0
 
 # Query String
@@ -512,7 +519,7 @@ def get_filename(card):
                 current_version = current_version + 1
                 print("\nChanged to" + str(card_versions[c_set][current_version]))
         except ValueError:
-            print("Collector number is not an int.")
+            print("Collector number '"+ card["collector_number"] +"' is not an int.")
         if "//" in card["name"]:
             current_file = str(card["name"]).replace(" // ", "_") + str(card_versions[c_set][current_version])
         elif "\"" in card["name"]:
@@ -523,6 +530,10 @@ def get_filename(card):
             current_file = str(card["name"]).replace("?", "") + str(card_versions[c_set][current_version])
         else:
             current_file = str(card["name"]) + str(card_versions[c_set][current_version])
+        if "prerelease" in card["promo_types"]:
+            current_file = current_file + " [S]"
+        elif "stamped" in card["promo_types"]:
+            current_file = current_file + " [P]"
     return current_file 
 
 # Get filenames for either side of transform / MDFC cards
@@ -546,10 +557,50 @@ def get_sets_raw():
 
 def get_sets_expanded():
     sets = scrython.sets.Sets()
+    ar_dump = print_array()
+    f = open("set_raw_output.txt", "w+")
     for i, set_id in enumerate(sets.data()):
-        print(str(set_id["code"]) + ";" + str(set_id["name"]) + ';' + str(set_id["set_type"]) + ';' +
+        boosterfun = "0;\"\""
+        x = 0
+        while x < len(ar_dump):
+            #f.writelines(str(set_code[x]) + ", " + str(set_id["code"]))
+            if str(set_code[x]).lower() == str(set_id["code"]).lower():
+                boosterfun = ar_dump[x]
+                x=x+1
+                continue
+            x=x+1
+        f.write(str(set_id["code"]) + ";" + str(set_id["name"]) + ';' + str(set_id["set_type"]) + ';' +
               str(set_id["released_at"]) + ';' + str(set_id["nonfoil_only"]) + ';' +
-              str(set_id["foil_only"]) + ';0;""')
+              str(set_id["foil_only"]) +';' + str(boosterfun) + "\n")
+        print("Added " + str(set_id["name"]) + " to the file.")
+    f.close()
+
+def print_array():
+    i = 0
+    bf_strings = []
+    while i < len(set_code):
+        line = ""
+        x = 0
+        while x < len(boundaries[i]):
+            line = line + str(boundaries[i][x])
+            if x < len(boundaries[i]):
+                line = line + ','
+            x=x+1
+        x=0
+        line = line + ';'
+        while x < len(card_versions[i]):
+            line = line + str(card_versions[i][x])
+            if x < len(boundaries[i]):
+                line = line + ','
+            x=x+1
+        i=i+1
+        line = line.replace('"','\"')
+        bf_strings.append(line)
+    i = 0
+    while i < len(bf_strings):
+        i=i+1
+    return bf_strings
+        
 
 def get_sets_search():
     sets = scrython.sets.Sets()
@@ -560,9 +611,6 @@ def get_sets_search():
     print(str(set_types))
 
 # File Names to Download
-# Uncomment the if block to download png instead of jpg files
-# These have transparency on the corners which raises the size by an order of magnitude
-# With all variants in png, average hard drive space is ~1GB per set vs ~70MB per set jpg
 def get_images(cards):
     os.makedirs(image_path,511,True)
     current_lang = ""
@@ -578,16 +626,16 @@ def get_images(cards):
                 os.makedirs(lang_path_foil,511,True)
         if card["digital"]:
             continue
- #       if card["highres_image"]:
- #           c_format = "png"
- #           ext = "png"
+        if use_png:
+            c_format = "png"
+            ext = "png"
         else:
             c_format = "large"
             ext = "jpg"
         if "nonfoil" in card["finishes"]:
             os.chdir(lang_path)
         else:
-            os.chdir(lang_path)
+            os.chdir(lang_path_foil)
         if card["layout"] == "transform" or card["layout"] == "modal_dfc":
             for i in range(0, 2):
                 file_name = get_filenames(card["card_faces"][i], card["collector_number"])
@@ -695,11 +743,11 @@ def print_sets(sets):
 
 def get_secret_lairs(cards):
     #names = []
-    eng = image_path + "ENG\\"
-    eng_foil = image_path + "ENG FOIL\\"
-    os.makedirs(image_path,511,True)
-    os.makedirs(eng,511,True)
-    os.makedirs(eng_foil,511,True)
+    #eng = image_path + "ENG\\"
+    #eng_foil = image_path + "ENG FOIL\\"
+    #os.makedirs(image_path,511,True)
+    #os.makedirs(eng,511,True)
+    #os.makedirs(eng_foil,511,True)
     os.makedirs(image_path,511,True)
     current_lang = ""
     for card in cards:
@@ -708,14 +756,26 @@ def get_secret_lairs(cards):
         col_num = ""
         if card["lang"] not in current_lang:
             current_lang = card["lang"]
-            lang_path = change_lang_dir(card, image_path)
-            os.makedirs(lang_path + "\\",511,True)
-            os.makedirs(lang_path + " FOIL\\",511,True)
+            lang_path = change_lang_dir(card, image_path) + "\\"
+            lang_path_foil = change_lang_dir(card, image_path) + " FOIL\\"
+        if "nonfoil" in card["finishes"]:
+            os.makedirs(lang_path,511,True)
+        else:
+            os.makedirs(lang_path_foil,511,True)
         if "//" in card["name"]:
             file_name = str(card["name"]).replace(" // ",'_')
         else:
             file_name = str(card["name"])
-        file_name = file_name + " [" + str(col_num + card["collector_number"]) + "]"
+        try: 
+            if int(card["collector_number"]) < 10:
+                file_name = file_name + " [00" + card["collector_number"] + "]"
+            elif int(card["collector_number"]) < 100:
+                file_name = file_name + " [0" + card["collector_number"] + "]"
+            else:
+                file_name = file_name + " [" + str(col_num + card["collector_number"]) + "]"
+        except ValueError:
+            print("Collector number '"+ card["collector_number"] +"' is not an int.")
+            file_name = file_name + " [" + str(col_num + card["collector_number"]) + "]"
         if card["highres_image"]:
             c_format = "png"
             ext = "png"
@@ -723,14 +783,14 @@ def get_secret_lairs(cards):
             c_format = "large"
             ext = "jpg"
         if "nonfoil" in card["finishes"]:
-            os.chdir(eng)
+            os.chdir(lang_path)
         else:
-            os.chdir(eng_foil)
+            os.chdir(lang_path_foil)
         file_name = file_name + "." + ext
         try:
             file_url = card["image_uris"][c_format]
         except KeyError:
-            print("Image_URI not found")
+            print("Image_URI not found for card " + card["name"] + '.')
         else:
             image_data = requests.get(file_url).content
             with open(file_name, 'wb') as handler:
@@ -743,8 +803,10 @@ def get_secret_lairs(cards):
 
 def get_set_raw(code):
     set_list = scrython.sets.Code(code=code)
-    for c_set in enumerate(set_list):
-        print(c_set)
+    print(str(set_list))
+
+    #for c_set in set_list:
+    #    print(c_set)
 
 def get_set_code(code):
     c_set = scrython.sets.Code(code)
@@ -754,6 +816,7 @@ def get_set_code(code):
     print("Released: " + c_set.released_at())
     print("Set Type: " + c_set.set_type())
     print("Icon: " + c_set.icon_svg_uri())
+    #print(c_set)
 
 def get_svg_files():
     sets = scrython.sets.Sets()
@@ -870,11 +933,11 @@ def sets_by_type():
 #get_set_raw("tsr")
 #get_languages(get_set_cards())
 #get_images(get_set_cards_range(get_set_cards(),262, 442))
-get_images(get_set_cards())
+#get_images(get_set_cards())
 #get_card("Far Out")
 #get_sets()
 #import_sets()
-#get_secret_lairs(get_set_cards())
+get_secret_lairs(get_set_cards())
 #get_card_set("Zndrsplt, Eye of Wisdom", "phed")
 #get_sets_search()
 #get_image_quality(get_set_cards())
@@ -882,7 +945,7 @@ get_images(get_set_cards())
 #get_sets_expanded()
 #get_sets_raw()
 #sets_by_type()
-
+#print_array()
 #for i in [9, len(card_versions)]:
 #    get_images(get_sets_cards(i))
 
